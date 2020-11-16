@@ -1,16 +1,15 @@
 import tkinter as Tk
 import Login_Screen
+import Customer
 from tkinter import messagebox as alert
 from DataBaseManager import DbManager
 from threading import Thread
 import time
 
-
-
 class Ride_acceptance_window():
 
 
-    def reached_location(self,ride_details,user_details):
+    def reached_location(self,ride_details):
         count = 0
         while (True):
             time.sleep(1)
@@ -18,7 +17,6 @@ class Ride_acceptance_window():
             if (count == 20):
                 alert.showinfo("Info", "Hey ,"+ " You Reached destination!"+"\nRIDE ID: "+ride_details[6])
                 DbManager.modify_ride_distribution_after_verification(self, "completed", ride_details[6])
-
                 break
 
     def start_ride_window(self,ride_details,user_details,driver_winodw_mainscreen):
@@ -47,20 +45,17 @@ class Ride_acceptance_window():
 
         verify_button = Tk.Button(start_ride_window, text="START RIDE", width=15, height=2,command=start_ride)
         verify_button.place(x=60, y=270)
+
         start_ride_window.mainloop()
 
 
 
     def verify_customer_window(self,ride_details,user_details,driver_winodw_mainscreen):
 
-
-
         def verified_customer_msg():
             verify_customer_window.destroy()
             alert.showinfo("info", "Successfully verified!")
             Ride_acceptance_window.start_ride_window(self,ride_details,user_details,driver_winodw_mainscreen)
-
-
 
         def not_verified_customer_msg():
             DbManager.modify_ride_distribution_after_verification(self,"notverified",ride_details[6])
@@ -96,9 +91,7 @@ class Ride_acceptance_window():
     def accepted_ride_window_with_verify_button(self,accepted_ride_details,user_phone_no):
 
         def reached_location():
-            individual_Accepted_ride_window_with_button.destroy()
-            alert.showinfo("info","Hey, "+accepted_ride_details[5] +"\nyour driver has arrived at the location!")
-
+            Customer.CustomerScreen.reached_pick_up_location(self,individual_Accepted_ride_window_with_button,accepted_ride_details)
 
         individual_Accepted_ride_window_with_button = Tk.Tk()
         individual_Accepted_ride_window_with_button.geometry("250x230")
@@ -117,13 +110,12 @@ class Ride_acceptance_window():
         ride_info_field.place(x=30, y=40)
 
         verify_button = Tk.Button(individual_Accepted_ride_window_with_button, text="Reached Location", width=15, height=1,command=reached_location)
-        individual_Accepted_ride_window_with_button.after(4000,verify_button.place(x=50, y=180))
+        individual_Accepted_ride_window_with_button.after(10000,verify_button.place(x=50, y=180))
 
         individual_Accepted_ride_window_with_button.mainloop()
 
 
     def accepted_ride_window(self,accepted_ride_details,user_phone_no):
-
 
         def ok_clicked():
             individual_Accepted_ride_window.destroy()
@@ -164,8 +156,6 @@ class Ride_acceptance_window():
             scrollbar = Tk.Scrollbar(ride_history_window)
             scrollbar.pack(side=Tk.RIGHT, fill=Tk.BOTH)
 
-
-
             for i in range(len(ride_history)):
                 listbox.insert(Tk.END, "RIDE ID:    "+ride_history[i][1])
                 if "REJECT" in ride_history[i][2]:
@@ -193,16 +183,13 @@ class Ride_acceptance_window():
             for i in ride_id_verification:
                 ride_id.append(i[0])
 
-
             if ride_id_rejected!=0:
                 for i in ride_id_rejected:
                     if i[0] in ride_id:
                         ride_id.remove(i[0])
 
-
                 if(len(ride_id)==0):
                     ride_id=0
-
 
             if (ride_id == 0):
                 alert.showinfo("info", "No Rides Available! ")
@@ -215,9 +202,7 @@ class Ride_acceptance_window():
                     individual_ride_window.destroy()
                     ride_details=DbManager.fetch_ride_details(self,ride_id[0])
                     user_phone_number=DbManager.fetch_user_phone_no(self,ride_details[5])
-
                     Ride_acceptance_window.accepted_ride_window(self,ride_details,user_phone_number)
-
 
                 def reject_result():
                     DbManager.modify_ride_distribution(self,ride_id[0],"reject",drivername)
@@ -274,12 +259,8 @@ class DriverScreen():
                 driver_window.withdraw()
                 Ride_acceptance_window.verify_customer_window(self,ride_details,user_Details,driver_window)
 
-
-
-
         def view_history():
             Ride_acceptance_window.ride_history_window(self,username)
-
 
         def get_pending_rides_list():
             availability_status=DbManager.check_driver_availability(self,global_username)
@@ -299,7 +280,6 @@ class DriverScreen():
                 Login_Screen.LoginPage.login_screen(self)
 
         def logout():
-
             DbManager.remove_active_user(self, global_username)
             driver_window.destroy()
             Login_Screen.LoginPage.login_screen(self)
@@ -316,7 +296,6 @@ class DriverScreen():
 
         driver_window=Tk.Tk()
         driver_window.geometry("300x500")
-
         driver_window.title("Driver Main Page ")
 
         heading = Tk.Label(driver_window, text="Hello, \n"+ firstname+", "+lastname) #pass user name

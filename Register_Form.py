@@ -5,7 +5,6 @@ from DataBaseManager import DbManager
 
 class RegisterFormPage(DbManager):
 
-
     def registeration_form(self):
         def on_closing():
             register_window.destroy()
@@ -13,7 +12,6 @@ class RegisterFormPage(DbManager):
 
         def on_submission():
             user_data=[]
-
             user_data.append(firstname_textfield_entry.get())
             user_data.append(lastname_textfield_entry.get())
             user_data.append(address_textfield_entry.get())
@@ -23,19 +21,14 @@ class RegisterFormPage(DbManager):
             user_data.append(username_textfield_entry.get())
             user_data.append(password_textfield_entry.get())
 
-
             DbManager.insertuser(self,user_data)
             alert.showinfo("Info", "Registered Successfully")
             register_window.destroy()
             Login_Screen.LoginPage.login_screen(self)
 
-
-
         register_window = Tk.Tk()
         register_window.geometry("430x400")
-
         register_window.title("Cab Booking Application Form")
-
         heading = Tk.Label(register_window, text="Register Form")
         heading.place(x=180, y=10)
 
@@ -73,7 +66,6 @@ class RegisterFormPage(DbManager):
         emailid_textfield_entry.place(x=100, y=200)
 
         usertype_textfield.place(x=20,y=240)
-
         radio_button_selector = Tk.StringVar()
 
         customer_radio_button = Tk.Radiobutton(register_window, text="Customer", variable=radio_button_selector, value="CUSTOMER")

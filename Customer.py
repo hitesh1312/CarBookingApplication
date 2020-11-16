@@ -9,20 +9,49 @@ from threading import Thread
 class CustomerScreen():
     global_username=""
 
+    def reached_pick_up_location(self,individual_Accepted_ride_window_with_button,accepted_ride_details):
+        individual_Accepted_ride_window_with_button.destroy()
+        alert.showinfo("info", "Hey, " + accepted_ride_details[5] + "\nyour driver has arrived at the location!")
 
+    def repeat_ride_window_customer(self,customer_window,username):
+
+        ride_history_destinations = DbManager.fetch_customer_completed_destinations(self, username)
+
+        if(ride_history_destinations==0):
+            alert.showinfo("info","No Completed rides available!")
+        else:
+
+            repeat_ride_window = Tk.Tk()
+            repeat_ride_window.title("Repeat Ride")
+            repeat_ride_window.geometry("300x300")
+            destination_listbox = Tk.Listbox(repeat_ride_window, width=35, height=12)
+            destination_listbox.pack(pady=25)
+
+            for i in range(len(ride_history_destinations)):
+                destination_listbox.insert(Tk.END, ride_history_destinations[i][0])
+                destination_listbox.insert(Tk.END, "")
+
+            def repeat_ride():
+                if(destination_listbox.get(Tk.ANCHOR)!=""):
+                    ride_history_repeat = DbManager.fetch_ride_details_customer_repeat(self, global_username,destination_listbox.get(Tk.ANCHOR))
+                    RideForm.ride_form_for_repeat(self,customer_window,username,ride_history_repeat,repeat_ride_window)
+                else:
+                    alert.showinfo("Info","Select the destination")
+
+            my_button = Tk.Button(repeat_ride_window, text="Repeat Ride", command=repeat_ride, width=13, height=2)
+            my_button.place(x=80, y=250)
+
+            global my_label
+            my_label = Tk.Label(repeat_ride_window, text=" ")
+            repeat_ride_window.mainloop()
 
     def ride_status_window(self,ride_details):
-
 
         if(ride_details!=0):
 
             if ride_details[0][7]=="PENDING":
                 alert.showinfo("Info","Searching for the drivers.\nPlease wait for few seconds")
-
             else:
-
-
-
                 def ok_clicked():
                     customer_ride_status_window.destroy()
 
@@ -35,13 +64,10 @@ class CustomerScreen():
 
                 driver_details=DbManager.fetch_user_details(self,ride_details[0][8])
                 driver_info="Driver Name:   "+driver_details[0]+", "+driver_details[1]+"\n" +"Driver Contact No:    "+ str(driver_details[3])
-
                 ride_status_info=ride_info+"\n"+driver_info
-
 
                 status = Tk.Label(customer_ride_status_window, text="STATUS:    "+ride_details[0][7])
                 status.config(font=("Courier", 20))
-
                 status.place(x=70, y=40)
 
                 heading = Tk.Label(customer_ride_status_window, text="Ride Status")
@@ -69,10 +95,10 @@ class CustomerScreen():
                 customer_ride_history_window.title("Ride History")
 
                 listbox = Tk.Listbox(customer_ride_history_window, width=30, height=20)
-
                 listbox.pack(side=Tk.LEFT, fill=Tk.BOTH)
                 scrollbar = Tk.Scrollbar(customer_ride_history_window)
                 scrollbar.pack(side=Tk.RIGHT, fill=Tk.BOTH)
+
 
                 for i in range(len(ride_history)):
 
@@ -83,23 +109,25 @@ class CustomerScreen():
                     listbox.insert(Tk.END, "\n")
 
 
-
                 listbox.config(yscrollcommand=scrollbar.set)
                 scrollbar.config(command=listbox.yview)
-
                 customer_ride_history_window.mainloop()
             else:
                 alert.showinfo("info","No History Avaialble")
-
-
         else:
             alert.showinfo("info","No History Avaialble")
-
 
     def customer_screen(self,username,firstname,lastname):
 
         global global_username
         global_username=username
+        def repeat_ride_window():
+            driver_availability = DbManager.check_driver_availability(self, "customer")
+
+            if (driver_availability == 0):
+                alert.showinfo("info", "No Drivers Available! ")
+            else:
+                CustomerScreen.repeat_ride_window_customer(self, customer_window, global_username)
 
         def ride_status_window():
             ride_history = DbManager.fetch_ride_details_customer_ride_status(self, global_username)
@@ -129,27 +157,27 @@ class CustomerScreen():
             Login_Screen.LoginPage.login_screen(self)
 
         customer_window=Tk.Tk()
-        customer_window.geometry("300x400")
-
+        customer_window.geometry("300x450")
         customer_window.title("Customer Main Page ")
-
         heading = Tk.Label(customer_window, text="Hello, \n"+firstname+", "+lastname) #pass user name
         heading.place(x=10, y=10)
 
         book_a_ride = Tk.Button(customer_window, text="Book Ride",width=10,height=2,command=get_ride_form)
-        book_a_ride.place(x=100, y=40)
+        book_a_ride.place(x=100, y=50)
 
         View_history = Tk.Button(customer_window, text="View History", width=10, height=2,command=view_customer_history)
-        View_history.place(x=100, y=120)
+        View_history.place(x=100, y=130)
 
         ride_status = Tk.Button(customer_window, text="Ride Status", width=10, height=2,command=ride_status_window)
-        ride_status.place(x=100, y=200)
+        ride_status.place(x=100, y=210)
+
+        ride_repeat = Tk.Button(customer_window, text="Repeat Ride", width=10, height=2, command=repeat_ride_window)
+        ride_repeat.place(x=100, y=290)
 
         logout_button = Tk.Button(customer_window, text="Logout", width=10, height=2,command=logout)
-        logout_button.place(x=100, y=280)
+        logout_button.place(x=100, y=370)
 
         customer_window.protocol("WM_DELETE_WINDOW", on_closing)
-
         customer_window.mainloop()
 
 
@@ -166,23 +194,18 @@ class RideForm():
                 if(status==1):
                     DbManager.remove_ride_no_driver_found(self,username)
                     alert.showinfo("Info","No Drivers found. Try after some time!")
-
                     break
                 else:
                     break
 
 
 
-
-    def ride_form(self,customer_window,username):
+    def ride_form_for_repeat(self,customer_window,username,ride_history,repeat_ride_window):
 
         global global_username
         global_username=username
-
-
         def on_closing():
             if alert.askokcancel("Quit", "Are you sure you want to cancel ?"):
-
                 ride_form_window.destroy()
                 customer_window.deiconify()
 
@@ -199,7 +222,6 @@ class RideForm():
             else:
                 list_of_ride_id = DbManager.get_ride_id(self)
                 customer_ride_data = []
-
                 customer_ride_data.append(current_location_textfield_entry.get())
                 customer_ride_data.append(destination_location_textfield_entry.get())
                 customer_ride_data.append(num_of_people_textfield_entry.get())
@@ -221,15 +243,111 @@ class RideForm():
                 Thread(target=RideForm.timer_to_search_drivers,args=(self,global_username,)).start()
                 alert.showinfo("info", "Ride submitted succesfully")
 
+            ride_form_window.destroy()
+            customer_window.deiconify()
+
+
+        repeat_ride_window.destroy()
+        customer_window.withdraw()
+        ride_form_window = Tk.Tk()
+        ride_form_window.geometry("500x300")
+        ride_form_window.title("Cab Booking Application Form")
+        heading = Tk.Label(ride_form_window, text="Ride Details")
+        heading.place(x=180, y=10)
+
+        current_location_textfield = Tk.Label(ride_form_window, text="Current Location")
+        destination_location_textfield = Tk.Label(ride_form_window, text="Destination Location")
+        num_of_people_textfield = Tk.Label(ride_form_window, text="Num of People")
+        num_of_luggage_textfield = Tk.Label(ride_form_window, text="Luggage Quantity")
+        type_of_ride_textfield = Tk.Label(ride_form_window, text="Ride Type")
+
+
+        current_location_textfield_entry = Tk.Entry(ride_form_window, width="30")
+        destination_location_textfield_entry = Tk.Entry(ride_form_window, width="30")
+        num_of_people_textfield_entry = Tk.Entry(ride_form_window, width="30")
+        num_of_luggage_textfield_entry = Tk.Entry(ride_form_window, width="30")
+
+        current_location_textfield_entry.insert(0,ride_history[0][0])
+        destination_location_textfield_entry.insert(0,ride_history[0][1])
+        num_of_luggage_textfield_entry.insert(0,ride_history[0][3])
+        num_of_people_textfield_entry.insert(0,ride_history[0][2])
+
+
+        current_location_textfield.place(x=20, y=40)
+        current_location_textfield_entry.place(x=170, y=40)
+
+        destination_location_textfield.place(x=20, y=80)
+        destination_location_textfield_entry.place(x=170, y=80)
+
+        num_of_people_textfield.place(x=20, y=120)
+        num_of_people_textfield_entry.place(x=170, y=120)
+
+        num_of_luggage_textfield.place(x=20, y=160)
+        num_of_luggage_textfield_entry.place(x=170, y=160)
+
+        type_of_ride_textfield.place(x=20,y=200)
+        Ride_Types = ["REGULAR", "VETETRAN", "EMERGENCY", ]
+
+        type_of_ride_Selector = Tk.StringVar(ride_form_window)
+        type_of_ride_Selector.set(Ride_Types[0])
+
+        type_of_ride_dropdown = Tk.OptionMenu(ride_form_window, type_of_ride_Selector, *Ride_Types)
+        type_of_ride_dropdown.place(x=170, y=200)
+
+        submit_button = Tk.Button(ride_form_window, text="Submit Ride",command=submit_ride_form)
+        submit_button.place(x=230, y=250)
+
+        ride_form_window.protocol("WM_DELETE_WINDOW", on_closing)
+        ride_form_window.mainloop()
+
+    def ride_form(self,customer_window,username):
+
+        global global_username
+        global_username=username
+        def on_closing():
+            if alert.askokcancel("Quit", "Are you sure you want to cancel ?"):
+                ride_form_window.destroy()
+                customer_window.deiconify()
+
+        def submit_ride_form():
+            check_user_ride_status=DbManager.get_user_ride_status(self,global_username)
+            check_user_ride_status_list = []
+
+            for i in range(len(check_user_ride_status)):
+                check_user_ride_status_list.append(check_user_ride_status[i][0])
+
+            if (("PENDING" in check_user_ride_status_list) or ("ACCEPT" in check_user_ride_status_list)or ("RUNNING" in check_user_ride_status_list)):
+                alert.showinfo("info", "You have already requested for a ride!")
+
+            else:
+                list_of_ride_id = DbManager.get_ride_id(self)
+                customer_ride_data = []
+                customer_ride_data.append(current_location_textfield_entry.get())
+                customer_ride_data.append(destination_location_textfield_entry.get())
+                customer_ride_data.append(num_of_people_textfield_entry.get())
+                customer_ride_data.append(num_of_luggage_textfield_entry.get())
+                customer_ride_data.append(type_of_ride_Selector.get())
+                customer_ride_data.append(global_username)
+
+                while (True):
+                    current_ride_id = username.upper() + str(random.randint(0, 10000))
+                    if (list_of_ride_id == 0):
+                        customer_ride_data.append(current_ride_id)
+                        break
+                    elif (current_ride_id not in list_of_ride_id):
+                        customer_ride_data.append(current_ride_id)
+                        break
+
+                DbManager.submitted_rides(self, customer_ride_data)
+                Thread(target=RideForm.timer_to_search_drivers,args=(self,global_username,)).start()
+                alert.showinfo("info", "Ride submitted succesfully")
 
             ride_form_window.destroy()
             customer_window.deiconify()
 
         ride_form_window = Tk.Tk()
         ride_form_window.geometry("500x300")
-
         ride_form_window.title("Cab Booking Application Form")
-
         heading = Tk.Label(ride_form_window, text="Ride Details")
         heading.place(x=180, y=10)
 

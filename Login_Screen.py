@@ -31,7 +31,6 @@ class LoginPage(DbManager):
 
             if(login_result==True):
                 DbManager.active_users(self,username_textfield_entry.get(),passwrod_textfield_entry.get())
-
                 self.navigate_to_respective_screen(login_window,usertype,username_textfield_entry.get(),firstname,lastname)
 
             else:
@@ -46,7 +45,6 @@ class LoginPage(DbManager):
 
         login_window = Tk.Tk()
         login_window.geometry("500x300")
-
         login_window.title("Cab Booking Application")
 
         heading = Tk.Label(login_window,text="Car Booking Application")
